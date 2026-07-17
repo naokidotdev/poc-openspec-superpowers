@@ -1,0 +1,15 @@
+{
+  "name": "poc-openspec-superpowers",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Todo app with React + Hono + Vitest in pnpm workspace",
+  "packageManager": "pnpm@11.13.1",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel -r dev",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build"
+  }
+}
