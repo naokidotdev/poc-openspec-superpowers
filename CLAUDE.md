@@ -26,3 +26,5 @@
 - openspec/ 配下のファイルに対して git add / git commit を行う際は、必ず openspec/ を作業ディレクトリとして実行すること（例: cd openspec && git add ... && git commit）。スーパープロジェクトのルートから直接パス指定でコミットしようとしないこと。
 - openspec/ の実体ファイルが public リポジトリのステージングに直接追加されようとした場合は、コミット前に必ず人間に確認すること。
 - openspec/ で新規コミットを作る前に、必ず `git -C openspec branch --show-current` 等で HEAD が detached になっていないか確認すること。空文字が返る場合は detached HEAD なので、先に `cd openspec && git checkout main` してから作業すること。detached HEAD のままコミットすると main ブランチに反映されない孤立コミットになり、`git push` が「Everything up-to-date」で無言で失敗する（gitlink 参照更新のために `git checkout <SHA>` した後に detached のまま新規開発を続けてしまうのが典型的な事故パターン）。
+- **コミットとpushの粒度を分けること**: openspec/ 内でのコミット自体はタスク単位（tasks.md のチェックボックス更新、schema修正など）で都度行ってよいが、push（private側リポジトリへのpush、および public側でのgitlink参照更新コミット・push）は毎回まとめて行う必要はない。一区切りついたタイミング（例: subagent-driven-development の全タスク完了時、フェーズの切り替わり時、人間に進捗を報告する直前）にまとめて1回行うこと。
+- まとめてpushする直前には、`git -C openspec branch --show-current` と `git -C openspec log --oneline -3` で main ブランチかつ意図したコミットが揃っていることを再確認してからpushすること（push頻度を下げる分、1回の確認漏れの影響が大きくなるため省略しない）。
