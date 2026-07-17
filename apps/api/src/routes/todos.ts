@@ -15,7 +15,7 @@ todosRoute.post("/", async (c) => {
     return c.json({ error: "title must not be empty" }, 400);
   }
 
-  const todo = addTodo(title);
+  const todo = addTodo(title.trim());
   return c.json(todo, 201);
 });
 

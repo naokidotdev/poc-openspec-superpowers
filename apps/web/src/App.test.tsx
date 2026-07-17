@@ -42,6 +42,15 @@ describe("App", () => {
     expect(await screen.findByText(/no todos/i)).toBeInTheDocument();
   });
 
+  it("shows an error message when loading todos fails", async () => {
+    mockedTodoClient.listTodos.mockRejectedValue(new Error("network error"));
+
+    render(<App />);
+
+    expect(await screen.findByText(/failed to load todos/i)).toBeInTheDocument();
+    expect(screen.queryByText(/no todos/i)).not.toBeInTheDocument();
+  });
+
   it("creates a todo and adds it to the list", async () => {
     const user = userEvent.setup();
     mockedTodoClient.listTodos.mockResolvedValue([]);

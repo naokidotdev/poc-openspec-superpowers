@@ -79,6 +79,22 @@ describe("todos routes", () => {
       expect(list).toEqual([]);
     });
 
+    it("trims leading and trailing whitespace from the stored title", async () => {
+      const app = buildApp();
+      const res = await app.request("/api/todos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "  Buy milk  " }),
+      });
+      expect(res.status).toBe(201);
+      const body = (await res.json()) as Todo;
+      expect(body.title).toBe("Buy milk");
+
+      const listRes = await app.request("/api/todos");
+      const list = (await listRes.json()) as Todo[];
+      expect(list[0]?.title).toBe("Buy milk");
+    });
+
     it("rejects creation with a whitespace-only title", async () => {
       const app = buildApp();
       const res = await app.request("/api/todos", {

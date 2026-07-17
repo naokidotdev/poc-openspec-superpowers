@@ -5,9 +5,12 @@ import { TodoList } from "./components/TodoList.tsx";
 
 export function App() {
   const [todos, setTodos] = useState<Todo[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    listTodos().then(setTodos);
+    listTodos()
+      .then(setTodos)
+      .catch(() => setError("Failed to load todos."));
   }, []);
 
   async function handleCreate(title: string) {
@@ -33,7 +36,7 @@ export function App() {
     <main>
       <h1>Todo</h1>
       <TodoForm onSubmit={handleCreate} />
-      <TodoList todos={todos} onToggle={handleToggle} onDelete={handleDelete} />
+      {error ? <p>{error}</p> : <TodoList todos={todos} onToggle={handleToggle} onDelete={handleDelete} />}
     </main>
   );
 }
