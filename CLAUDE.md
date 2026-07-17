@@ -11,6 +11,10 @@
 - 必ず Skill ツールで superpowers:subagent-driven-development を明示的に呼び出し、tasks.md を渡すこと。
 - 各タスクは red → green → refactor の順で実装し、テストを書く前にコードを書かないこと。
 - 全タスク完了後、Superpowers の requesting-code-review でレビューしてから /opsx:archive に進むこと。
+- superpowers:subagent-driven-development の implementer は openspec の tasks.md のチェックボックスを自動更新しない。各タスクのレビューが Approved になったら、コントローラー（このセッション）が対応する tasks.md の `- [ ]` を `- [x]` に更新し、openspec/ を作業ディレクトリとしてコミットすること。
+
+### OpenSpec ↔ Superpowers 統合上の互換性対応
+- `openspec/schemas/spec-driven/` に project-local schema を fork 済み。tasks artifact の見出し形式を `## Task N: <Title>` に固定してある（package既定の `## N. Title` のままだと、superpowers:subagent-driven-development の `task-brief` スクリプトが見出しを `Task` という単語でマッチングするため、タスクを検出できずエラーになる）。/opsx:propose で生成される tasks.md はこの schema を使うため、通常通り生成すればそのまま subagent-driven-development に渡してよい。`openspec/schemas/spec-driven/schema.yaml` と `templates/tasks.md` の見出し形式は変更しないこと。
 
 ### git操作の注意
 - openspec/ 配下のファイルに対して git add / git commit を行う際は、必ず openspec/ を作業ディレクトリとして実行すること（例: cd openspec && git add ... && git commit）。スーパープロジェクトのルートから直接パス指定でコミットしようとしないこと。
