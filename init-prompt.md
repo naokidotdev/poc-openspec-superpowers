@@ -31,11 +31,13 @@
 1. OpenSpecが未導入であればインストールする
 2. `openspec init` を実行する
 3. `openspec/config.yaml` を作成し、デフォルトschemaを `spec-driven` に設定する
+4. **フォーマットギャップ対応（必須）**: OpenSpec の package 既定スキーマが生成する `tasks.md` の見出し形式（`## N. Title`）は、Superpowers の `subagent-driven-development` スキルが使う `task-brief` スクリプトの期待形式（見出しに "Task" という単語を含む `## Task N: Title`）と一致せず、`/opsx:apply` → `subagent-driven-development` の連携が壊れる。`openspec schema fork spec-driven spec-driven` で project-local schema（`openspec/schemas/spec-driven/`、private submodule側）を作成し、`schema.yaml` と `templates/tasks.md` の tasks artifact の見出し形式を `## Task N: <Title>` に修正すること。修正後は `openspec schema validate` と、ダミー change での `openspec new change` → `task-brief` 実行で動作を確認すること。
 
 ## タスク4: Superpowersの導入
 
-1. `/plugin marketplace add obra/superpowers-marketplace` を実行する
-2. `/plugin install superpowers@superpowers-marketplace` を実行する
+1. Superpowers は `anthropics/claude-plugins-official`（Anthropic公式マーケットプレイス）経由で導入する。`obra/superpowers-marketplace` は使用しないこと（同名プラグインの重複導入による競合を避けるため）。
+2. 既に `anthropics/claude-plugins-official` がマーケットプレイス登録済みで、superpowers プラグインも導入済みの場合は、このタスクは完了済みとして扱ってよい（`superpowers:*` スキルが使えるか確認するだけでよい）。
+3. 未導入の場合のみ `/plugin marketplace add anthropics/claude-plugins-official` → `/plugin install superpowers@claude-plugins-official` を実行する。
 
 ## タスク5: CLAUDE.mdへの配線ルール追加
 
@@ -55,6 +57,10 @@
 - 必ず Skill ツールで superpowers:subagent-driven-development を明示的に呼び出し、tasks.md を渡すこと。
 - 各タスクは red → green → refactor の順で実装し、テストを書く前にコードを書かないこと。
 - 全タスク完了後、Superpowers の requesting-code-review でレビューしてから /opsx:archive に進むこと。
+- superpowers:subagent-driven-development の implementer は openspec の tasks.md のチェックボックスを自動更新しない。各タスクのレビューが Approved になったら、コントローラー（このセッション）が対応する tasks.md の `- [ ]` を `- [x]` に更新し、openspec/ を作業ディレクトリとしてコミットすること。
+
+### OpenSpec ↔ Superpowers 統合上の互換性対応
+- `openspec/schemas/spec-driven/` に project-local schema を fork 済み。tasks artifact の見出し形式を `## Task N: <Title>` に固定してある（package既定の `## N. Title` のままだと superpowers:subagent-driven-development の `task-brief` スクリプトがタスクを検出できない）。/opsx:propose で生成される tasks.md はこの schema を使うため、通常通り生成すればそのまま subagent-driven-development に渡してよい。`openspec/schemas/spec-driven/schema.yaml` と `templates/tasks.md` の見出し形式は変更しないこと。
 
 ### git操作の注意
 - openspec/ 配下のファイルに対して git add / git commit を行う際は、必ず openspec/ を作業ディレクトリとして実行すること（例: cd openspec && git add ... && git commit）。スーパープロジェクトのルートから直接パス指定でコミットしようとしないこと。
