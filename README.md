@@ -42,17 +42,19 @@ git commit -m "Update openspec submodule reference"
 ### 方法A: Fine-grained Personal Access Token（推奨）
 
 1. GitHub の Settings → Developer settings → Fine-grained tokens で新規トークンを発行する。
-   - Repository access: `naokidotdev/poc-openspec-superpowers-specs` のみに限定する。
-   - Permissions: `Contents: Read-only`（読み取りのみで十分な場合）。
+    - Repository access: `naokidotdev/poc-openspec-superpowers-specs` のみに限定する。
+    - Permissions: `Contents: Read-only`（読み取りのみで十分な場合）。
 2. 発行したトークンを、本リポジトリ（`poc-openspec-superpowers`）の Settings → Secrets and variables → Actions に `OPENSPEC_SPECS_PAT` という名前で登録する。
 3. ワークフロー側で submodule checkout 時にトークンを利用する:
-   ```yaml
-   - uses: actions/checkout@v4
-     with:
-       submodules: recursive
-       token: ${{ secrets.OPENSPEC_SPECS_PAT }}
-   ```
-   ただし `actions/checkout` の `token` はメインリポジトリの checkout に使われるため、submodule 側の private リポジトリ用には `.gitmodules` の URL 書き換え、もしくは `git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"` のような設定を別途ステップで行う必要がある。
+
+    ```yaml
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+        token: ${{ secrets.OPENSPEC_SPECS_PAT }}
+    ```
+
+    ただし `actions/checkout` の `token` はメインリポジトリの checkout に使われるため、submodule 側の private リポジトリ用には `.gitmodules` の URL 書き換え、もしくは `git config --global url."https://x-access-token:${TOKEN}@github.com/".insteadOf "https://github.com/"` のような設定を別途ステップで行う必要がある。
 
 ### 方法B: Deploy Key
 
