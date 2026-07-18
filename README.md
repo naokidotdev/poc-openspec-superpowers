@@ -24,8 +24,8 @@ sequenceDiagram
     participant GitSpecs as Git（openspec/）
 
     人間->>OpenSpec: 機能要望・仕様変更を相談
-    OpenSpec->>GitSuper: develop から feature/<slug> を作成・checkout
-    OpenSpec->>GitSpecs: develop から同名の feature/<slug> を作成・checkout
+    OpenSpec->>GitSuper: develop から feature/{slug} を作成・checkout
+    OpenSpec->>GitSpecs: develop から同名の feature/{slug} を作成・checkout
     OpenSpec->>OpenSpec: /opsx:explore で要件整理
     OpenSpec->>OpenSpec: /opsx:propose で proposal.md / design.md / delta specs / tasks.md を生成
     OpenSpec->>GitSpecs: git add/commit（openspec/ を作業ディレクトリとして）
@@ -44,15 +44,15 @@ sequenceDiagram
     Superpowers-->>人間: レビュー結果を提示
 
     Note over OpenSpec,GitSpecs: 一区切りのタイミングでまとめて push
-    OpenSpec->>GitSpecs: feature/<slug> を push → PR作成 → develop へマージ
+    OpenSpec->>GitSpecs: feature/{slug} を push → PR作成 → develop へマージ
     OpenSpec->>GitSuper: gitlink参照更新コミット（openspec/ の参照先を更新）
-    OpenSpec->>GitSuper: feature/<slug> を push → PR作成 → develop へマージ
+    OpenSpec->>GitSuper: feature/{slug} を push → PR作成 → develop へマージ
     人間->>OpenSpec: /opsx:archive で変更を確定
 
     Note over 人間,GitSuper: develop → main のリリースマージは人間が判断して実施
 ```
 
-### 単独モード（openspec/ 配下を変更しない作業: ドキュメント修正・リファクタリングなど）
+### 単独モード（openspec/ 配下を変更しない作業: ドキュメント修正など）
 
 ```mermaid
 sequenceDiagram
@@ -61,7 +61,7 @@ sequenceDiagram
     participant GitSuper as Git（スーパープロジェクト）
 
     人間->>Agent: 作業を依頼（openspec/ 配下は変更しない）
-    Agent->>GitSuper: develop から feature/<slug> を作成・checkout（openspec/ には変更を加えない）
+    Agent->>GitSuper: develop から feature/{slug} を作成・checkout（openspec/ には変更を加えない）
     Agent->>Agent: 実装・修正
     Agent->>GitSuper: git add/commit（Conventional Commits）
     Agent->>GitSuper: push → PR作成
