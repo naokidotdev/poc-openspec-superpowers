@@ -1,0 +1,23 @@
+#!/bin/sh
+# openspec/ は private submodule (naokidotdev/poc-openspec-superpowers-specs) への参照。
+# スーパープロジェクト側のコミットには gitlink 参照 (openspec) の更新のみを許可し、
+# openspec/ 配下の実体ファイルが直接ステージングされた場合はコミットを拒否する。
+
+staged_openspec_files=$(git diff --cached --name-only --diff-filter=ACM | grep '^openspec/' || true)
+
+if [ -n "$staged_openspec_files" ]; then
+  echo "pre-commit: openspec/ 配下の実体ファイルがスーパープロジェクトに直接ステージングされています。" >&2
+  echo "" >&2
+  echo "$staged_openspec_files" >&2
+  echo "" >&2
+  echo "openspec/ は private submodule です。実体ファイルはスーパープロジェクトの git history に" >&2
+  echo "残してはいけません。以下のいずれかで対処してください:" >&2
+  echo "  1. git restore --staged <file> でステージングを取り消す" >&2
+  echo "  2. openspec/ 側にコミットする場合は openspec/ を作業ディレクトリとして実行する" >&2
+  echo "     (例: cd openspec && git add . && git commit && git push)" >&2
+  echo "" >&2
+  echo "gitlink としての参照更新 (git add openspec) はこのチェックの対象外です。" >&2
+  exit 1
+fi
+
+exit 0
