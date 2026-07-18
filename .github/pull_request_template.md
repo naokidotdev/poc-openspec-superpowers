@@ -15,6 +15,7 @@
 ## Checklist
 
 - [ ] コミットメッセージが [Conventional Commits](https://www.conventionalcommits.org/) 形式に従っている
+- [ ] マージ先ブランチが `develop`（`develop` → `main` のリリースPRを除く）
 - [ ] （実装フェーズの変更の場合）superpowers:requesting-code-review でレビュー済み
 - [ ] （openspec/ 配下を変更した場合）openspec/ 側の変更もマージ・push済みで、gitlink参照が最新
 
