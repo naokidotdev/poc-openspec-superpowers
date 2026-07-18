@@ -47,7 +47,7 @@
 - **同期モード**（openspec/ 配下の変更を伴う作業: 仕様追加・変更など）: スーパープロジェクトと openspec/ の両方で、それぞれの `develop` から同名の `feature/<name>` ブランチを作成し、並行して作業する。openspec 側の `feature/<name>` を `develop` にマージ・push したら、スーパープロジェクト側で gitlink 参照更新コミットを行う。
 - **単独モード**（openspec/ 配下を変更しない作業: ドキュメント修正、リファクタリングなど）: スーパープロジェクトのみ `develop` から `feature/*` を作成して切り替え、openspec/ には変更を加えない。
 
-`feature/*` の変更は PR で `develop` にマージする。GitHub リポジトリの既定ブランチが `main` のままの場合、`gh pr create` 等で PR を作成する際は `--base develop` を明示すること。`develop` → `main` へのリリースマージは人間が判断して行い、Claude Code は明示的な指示なくこのマージを行わないこと。
+修正は基本的に `feature/*` ブランチで行う。`feature/*` → `develop` の PR を作成する。GitHub リポジトリの既定ブランチは `main` のため、`gh pr create` 等で PR を作成する際は `--base develop` を明示すること。`develop` → `main` の PR は人間が判断して作成し、Claude Code は明示的な指示なくこの PR 作成・マージを行わないこと。
 
 #### 命名規則
 
