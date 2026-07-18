@@ -19,6 +19,15 @@ function mockFetchOnce(body: unknown, init?: { status?: number; ok?: boolean }) 
   });
 }
 
+// hc() (the Hono RPC client) issues requests via the global `fetch`, always
+// passing a real `Headers` instance (not a plain object) as the second
+// argument's `headers` field, and only sets `Content-Type` when a JSON body
+// is present. These helpers build the exact expected `Headers` so
+// `toHaveBeenCalledWith` deep-equality checks pass against the real
+// `Headers` instance the client constructs.
+const jsonHeaders = () => new Headers({ "Content-Type": "application/json" });
+const noHeaders = () => new Headers();
+
 describe("todoClient", () => {
   beforeEach(() => {
     vi.stubGlobal("fetch", vi.fn());
@@ -34,7 +43,10 @@ describe("todoClient", () => {
 
       const result = await listTodos();
 
-      expect(globalThis.fetch).toHaveBeenCalledWith("/api/todos");
+      expect(globalThis.fetch).toHaveBeenCalledWith("/api/todos", {
+        method: "GET",
+        headers: noHeaders(),
+      });
       expect(result).toEqual([sampleTodo]);
     });
   });
@@ -47,16 +59,16 @@ describe("todoClient", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledWith("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: jsonHeaders(),
         body: JSON.stringify({ title: "Buy milk" }),
       });
       expect(result).toEqual(sampleTodo);
     });
 
-    it("throws when the server rejects the title (400)", async () => {
+    it("throws with the server's error message when the title is rejected (400)", async () => {
       globalThis.fetch = mockFetchOnce({ error: "title must not be empty" }, { status: 400, ok: false });
 
-      await expect(createTodo("")).rejects.toThrow();
+      await expect(createTodo("")).rejects.toThrow("title must not be empty");
     });
   });
 
@@ -69,16 +81,16 @@ describe("todoClient", () => {
 
       expect(globalThis.fetch).toHaveBeenCalledWith("/api/todos/1", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: jsonHeaders(),
         body: JSON.stringify({ completed: true }),
       });
       expect(result).toEqual(updated);
     });
 
-    it("throws when the todo does not exist (404)", async () => {
+    it("throws with the server's error message when the todo does not exist (404)", async () => {
       globalThis.fetch = mockFetchOnce({ error: "todo not found" }, { status: 404, ok: false });
 
-      await expect(toggleTodo("missing", true)).rejects.toThrow();
+      await expect(toggleTodo("missing", true)).rejects.toThrow("todo not found");
     });
   });
 
@@ -88,17 +100,32 @@ describe("todoClient", () => {
 
       await removeTodo("1");
 
-      expect(globalThis.fetch).toHaveBeenCalledWith("/api/todos/1", { method: "DELETE" });
+      expect(globalThis.fetch).toHaveBeenCalledWith("/api/todos/1", {
+        method: "DELETE",
+        headers: noHeaders(),
+      });
     });
 
-    it("throws when the todo does not exist (404)", async () => {
+    it("throws with the server's error message when the todo does not exist (404)", async () => {
       globalThis.fetch = vi.fn().mockResolvedValue({
         ok: false,
         status: 404,
         json: () => Promise.resolve({ error: "todo not found" }),
       });
 
-      await expect(removeTodo("missing")).rejects.toThrow();
+      await expect(removeTodo("missing")).rejects.toThrow("todo not found");
+    });
+  });
+
+  describe("error handling fallback", () => {
+    it("falls back to a generic message when the error response has no JSON body", async () => {
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        json: () => Promise.reject(new Error("not JSON")),
+      });
+
+      await expect(listTodos()).rejects.toThrow("Request failed with status 500");
     });
   });
 });
