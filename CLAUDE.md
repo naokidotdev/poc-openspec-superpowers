@@ -10,6 +10,9 @@
 - このプロジェクトの要件整理・仕様管理は OpenSpec で行う。Superpowers の brainstorming / writing-plans スキルは使用しないこと。
 - 機能要望や仕様変更の相談を受けたら、まず /opsx:explore → /opsx:propose の順で対応すること。
 - 仕様の成果物（proposal.md, design.md, delta specs）は openspec/ 配下にのみ書き込むこと。
+- `openspec` CLI は「change には最低1件の delta（ADDED/MODIFIED/REMOVED/RENAMED requirement）が必要」という制約を、ワークフロー schema とは独立したコアのデータモデル（`ChangeSchema`）にハードコードしている。project-local schema を fork してもこの制約は回避できない。
+  - そのため、ユーザー向けの振る舞いを一切変えない技術リファクタ（例: 内部実装の置き換え、依存ライブラリの移行）であっても、proposal.md の Capabilities を両方空にしないこと。その変更が実際に提供する性質・保証（型安全性、パフォーマンス、エラー処理の一貫性など）を最低1件、既存 capability への `ADDED Requirements` として明示すること。「validate を通すためのダミー要件」ではなく、変更の本来の動機を正確に言語化したものにすること。
+  - 本当に外部から観測可能な性質変化が一切ない変更（例: コメント整理、フォーマット調整のみ）は、そもそも OpenSpec の change プロセスに乗せる必要がない。
 
 ## 実装フェーズ
 
