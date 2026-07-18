@@ -5,19 +5,22 @@
 
 staged_openspec_files=$(git diff --cached --name-only --diff-filter=ACM | grep '^openspec/' || true)
 
-if [ -n "$staged_openspec_files" ]; then
-  echo "pre-commit: openspec/ 配下の実体ファイルがスーパープロジェクトに直接ステージングされています。" >&2
-  echo "" >&2
-  echo "$staged_openspec_files" >&2
-  echo "" >&2
-  echo "openspec/ は private submodule です。実体ファイルはスーパープロジェクトの git history に" >&2
-  echo "残してはいけません。以下のいずれかで対処してください:" >&2
-  echo "  1. git restore --staged <file> でステージングを取り消す" >&2
-  echo "  2. openspec/ 側にコミットする場合は openspec/ を作業ディレクトリとして実行する" >&2
-  echo "     (例: cd openspec && git add . && git commit && git push)" >&2
-  echo "" >&2
-  echo "gitlink としての参照更新 (git add openspec) はこのチェックの対象外です。" >&2
-  exit 1
+if [ -z "$staged_openspec_files" ]; then
+  exit 0
 fi
 
-exit 0
+cat <<EOF >&2
+pre-commit: openspec/ 配下の実体ファイルがスーパープロジェクトに直接ステージングされています。
+
+$staged_openspec_files
+
+openspec/ は private submodule です。実体ファイルはスーパープロジェクトの git history に
+残してはいけません。以下のいずれかで対処してください:
+  1. git restore --staged <file> でステージングを取り消す
+  2. openspec/ 側にコミットする場合は openspec/ を作業ディレクトリとして実行する
+     (例: cd openspec && git add . && git commit && git push)
+
+gitlink としての参照更新 (git add openspec) はこのチェックの対象外です。
+EOF
+
+exit 1
