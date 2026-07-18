@@ -58,10 +58,15 @@
 
 ### openspec/ 配下の操作
 
-- `git add` / `git commit` は必ず openspec/ を作業ディレクトリとして実行すること（例: `cd openspec && git add ... && git commit`）。スーパープロジェクトのルートから直接パス指定でコミットしないこと。
+- `git add` / `git commit` は必ず openspec/ を対象として実行すること。`cd openspec && ...` ではなく `git -C openspec add ...` / `git -C openspec commit ...` の形を使うこと（理由は下記のcwd安全性の項を参照）。スーパープロジェクトのルートから直接パス指定でコミットしないこと。
 - openspec/ の実体ファイルがスーパープロジェクトのステージングに直接追加されようとした場合は、コミット前に必ず人間に確認すること。
-- 新規コミットを作る前に、必ず `git -C openspec branch --show-current` 等で HEAD が detached になっていないか確認すること。空文字が返る場合は detached HEAD なので、先に同期モードなら対応する `feature/<name>`、単独モードなら `develop` へ `cd openspec && git checkout <ブランチ>` してから作業すること。
+- 新規コミットを作る前に、必ず `git -C openspec branch --show-current` 等で HEAD が detached になっていないか確認すること。空文字が返る場合は detached HEAD なので、先に同期モードなら対応する `feature/<name>`、単独モードなら `develop` へ `git -C openspec checkout <ブランチ>` してから作業すること。
   - detached HEAD のままコミットすると意図したブランチに反映されない孤立コミットになり、`git push` が「Everything up-to-date」で無言で失敗する（gitlink 参照更新のために `git checkout <SHA>` した後に detached のまま新規開発を続けてしまうのが典型的な事故パターン）。
+
+#### cwd 安全性（submodule 起因のパス事故防止）
+
+- openspec/ を対象にした git 操作では `cd openspec && ...` を使わないこと。bash の作業ディレクトリはツール呼び出しをまたいで保持されるため、`cd` で移動した後に戻し忘れると、以降のコマンドが誤って openspec/ 側を対象にしてしまう。必ず `git -C openspec <subcommand>` の形で、cwd をスーパープロジェクトのルートに固定したまま操作すること。
+- 特に、`git rev-parse HEAD`（レビュー用のベースコミット記録など）や `superpowers:subagent-driven-development` 付属の `task-brief`/`review-package` スクリプトは `git rev-parse --show-toplevel` で cwd 依存にリポジトリルートを解決するため、cwd が openspec/ 側に残ったままだと、ブリーフ/レビューパッケージの出力先やベースコミットの取り違えといった事故につながる（例: ブリーフファイルが `openspec/.superpowers/` 配下に誤って書き込まれる、レビュー対象のベースコミットが openspec 側の HEAD になり `review-package` が `Invalid revision range` で失敗する）。これらのコマンドを実行する前には必ず `pwd` でスーパープロジェクトのルートにいることを確認すること。
 
 #### コミットと push の粒度
 
