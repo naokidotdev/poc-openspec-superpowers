@@ -56,7 +56,7 @@ describe("AuthContext", () => {
     );
 
     expect(await screen.findByText("authenticated")).toBeInTheDocument();
-    expect(fetch).toHaveBeenCalledWith("/api/auth/me");
+    expect(fetch).toHaveBeenCalledWith("/api/auth/me", { credentials: "include" });
   });
 
   it("sets status to unauthenticated when /api/auth/me reports authenticated: false", async () => {

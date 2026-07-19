@@ -57,7 +57,7 @@ export async function logout(): Promise<void> {
  */
 export async function checkAuthStatus(): Promise<boolean> {
   try {
-    const res = await fetch("/api/auth/me");
+    const res = await fetch("/api/auth/me", { credentials: "include" });
     const body = (await res.json()) as { authenticated: boolean };
     return body.authenticated;
   } catch {

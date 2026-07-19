@@ -93,7 +93,7 @@ describe("authClient", () => {
 
       const result = await checkAuthStatus();
 
-      expect(fetch).toHaveBeenCalledWith("/api/auth/me");
+      expect(fetch).toHaveBeenCalledWith("/api/auth/me", { credentials: "include" });
       expect(result).toBe(true);
     });
 
