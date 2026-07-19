@@ -105,7 +105,7 @@ git submodule update --init --recursive
 node --input-type=module -e 'import { hashPassword } from "./apps/api/src/auth/password.ts"; console.log(hashPassword("your-password"))'
 ```
 
-平文パスワードや生成したハッシュ値を `.env` などのファイルに保存する場合は、誤ってコミットしないよう注意してください。**現時点で `.gitignore` に `.env` は含まれていない**ため、`.env` ファイルを使う場合は先に `.gitignore` への追加を検討してください。
+平文パスワードや生成したハッシュ値を `.env` などのファイルに保存する場合は、誤ってコミットしないよう注意してください。`.env` / `.env.*` は `.gitignore` で除外済みです。
 
 ## openspec/ へのコミットについて
 
