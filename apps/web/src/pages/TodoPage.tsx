@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import { logout } from "../api/authClient.ts";
 import { createTodo, listTodos, removeTodo, toggleTodo, type Todo } from "../api/todoClient.ts";
 import { TodoForm } from "../components/TodoForm.tsx";
 import { TodoList } from "../components/TodoList.tsx";
@@ -37,19 +38,11 @@ export function TodoPage() {
   }
 
   async function handleLogout() {
-    // Inline fetch call here (rather than a dedicated API client) is
-    // intentional for this task; a later task extracts this and similar
-    // calls into apps/web/src/api/authClient.ts.
-    try {
-      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
-    } catch {
-      // Logout is best-effort from the client's perspective: the server-side
-      // session invalidation is idempotent, so even if this request fails
-      // (e.g. network error) we still log the user out locally below.
-    } finally {
-      setAuthenticated(false);
-      navigate("/login");
-    }
+    // logout() is best-effort and never throws (see its doc comment), so the
+    // client-side logout below always runs regardless of network outcome.
+    await logout();
+    setAuthenticated(false);
+    navigate("/login");
   }
 
   return (

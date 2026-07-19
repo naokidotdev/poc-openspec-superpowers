@@ -24,8 +24,18 @@ export type Todo = InferResponseType<typeof client.api.todos.$get>[number];
  * accepts GET's response type (which has no error variant to narrow to,
  * since the route never rejects). The `error` field is read via a runtime
  * check rather than a static cast onto a specific shape.
+ *
+ * A 401 response additionally dispatches an `"auth:unauthorized"` event on
+ * `window`, which `AuthContext` listens for to clear auth state and redirect
+ * to `/login` (the session has expired server-side). This is a side effect
+ * in addition to the usual error-throwing behavior below, not a replacement
+ * for it: the caller still sees a rejected promise either way.
  */
 async function throwRequestError(res: { status: number; json(): Promise<unknown> }): Promise<never> {
+  if (res.status === 401) {
+    window.dispatchEvent(new Event("auth:unauthorized"));
+  }
+
   let message = `Request failed with status ${res.status}`;
   try {
     const body = (await res.json()) as { error?: string };

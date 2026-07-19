@@ -1,11 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router";
+import { login } from "../api/authClient.ts";
 import { useAuth } from "../context/AuthContext.tsx";
-
-// Inline fetch call here (rather than a dedicated API client) is intentional
-// for this task; a later task extracts this and similar calls into
-// apps/web/src/api/authClient.ts.
-const GENERIC_LOGIN_ERROR = "ログインに失敗しました";
 
 export function LoginPage() {
   const [id, setId] = useState("");
@@ -21,24 +17,10 @@ export function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ id, password }),
-      });
+      const result = await login(id, password);
 
-      if (!res.ok) {
-        let message = GENERIC_LOGIN_ERROR;
-        try {
-          const body = (await res.json()) as { error?: string };
-          if (body?.error) {
-            message = body.error;
-          }
-        } catch {
-          // response had no JSON body; keep the generic message
-        }
-        setError(message);
+      if (!result.ok) {
+        setError(result.error);
         return;
       }
 
@@ -46,9 +28,6 @@ export function LoginPage() {
       // see a stale "unauthenticated" status and redirect back to /login.
       setAuthenticated(true);
       navigate("/");
-    } catch {
-      // network error or similar; the request never got a response
-      setError(GENERIC_LOGIN_ERROR);
     } finally {
       setIsSubmitting(false);
     }
