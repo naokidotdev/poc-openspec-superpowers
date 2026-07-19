@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "pnpm --parallel -r dev",
     "test": "pnpm -r test",
-    "build": "pnpm -r build"
+    "build": "pnpm -r build",
+    "postinstall": "git config core.hooksPath .githooks"
   }
 }
