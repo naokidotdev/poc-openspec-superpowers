@@ -43,11 +43,14 @@ sequenceDiagram
     OpenSpec->>Superpowers: 全タスク完了後 requesting-code-review を実行
     Superpowers-->>人間: レビュー結果を提示
 
+    Note over OpenSpec,GitSpecs: 同じfeatureブランチ内でarchiveしてからPRを作成する
+    OpenSpec->>GitSpecs: /opsx:archive で変更を確定（main specsへdeltaをマージし、変更フォルダをarchive/へ移動）してコミット
+
     Note over OpenSpec,GitSpecs: 一区切りのタイミングでまとめて push
     par 実装PRとopenspec側PRは互いのマージを待たずに独立して進行
         OpenSpec->>GitSuper: feature/{slug} を push → 実装PR作成 → develop へマージ
     and
-        OpenSpec->>GitSpecs: feature/{slug} を push → PR作成 → develop へマージ
+        OpenSpec->>GitSpecs: feature/{slug}（archive済み）を push → PR作成 → develop へマージ
     end
 
     Note over OpenSpec,GitSuper: openspec側PRのマージ確定後、実装PRとは別のchore PRで対応（実装PRが既にマージ済みでも追加commitできないため）
@@ -55,7 +58,6 @@ sequenceDiagram
     OpenSpec->>GitSuper: gitlink参照更新コミット（openspec/ の参照先を更新）→ push → chore PR作成
     Note over OpenSpec,GitSuper: 機械的な参照更新のみのため、人間のレビューを待たずAgentが即座にマージしてよい
     OpenSpec->>GitSuper: develop へマージ
-    人間->>OpenSpec: /opsx:archive で変更を確定
 
     Note over 人間,GitSuper: develop → main のリリースマージは人間が判断して実施
 ```
