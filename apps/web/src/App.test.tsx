@@ -1,10 +1,11 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { App } from "./App.tsx";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
+import { AppRoutes } from "./App.tsx";
 import * as todoClient from "./api/todoClient.ts";
-import type { Todo } from "./api/todoClient.ts";
 
+// Routing/auth-gating behavior only. Todo behavior itself is covered by
+// pages/TodoPage.test.tsx.
 vi.mock("./api/todoClient.ts", () => ({
   listTodos: vi.fn(),
   createTodo: vi.fn(),
@@ -14,89 +15,44 @@ vi.mock("./api/todoClient.ts", () => ({
 
 const mockedTodoClient = vi.mocked(todoClient);
 
-const existingTodo: Todo = {
-  id: "1",
-  title: "Buy milk",
-  completed: false,
-  createdAt: "2026-07-17T00:00:00.000Z",
-};
-
-describe("App", () => {
+describe("App routing", () => {
   beforeEach(() => {
     vi.resetAllMocks();
-  });
-
-  it("loads and displays todos on mount", async () => {
-    mockedTodoClient.listTodos.mockResolvedValue([existingTodo]);
-
-    render(<App />);
-
-    expect(await screen.findByText("Buy milk")).toBeInTheDocument();
-  });
-
-  it("shows the empty state when there are no todos", async () => {
     mockedTodoClient.listTodos.mockResolvedValue([]);
-
-    render(<App />);
-
-    expect(await screen.findByText(/no todos/i)).toBeInTheDocument();
+    vi.stubGlobal("fetch", vi.fn());
   });
 
-  it("shows an error message when loading todos fails", async () => {
-    mockedTodoClient.listTodos.mockRejectedValue(new Error("network error"));
-
-    render(<App />);
-
-    expect(await screen.findByText(/failed to load todos/i)).toBeInTheDocument();
-    expect(screen.queryByText(/no todos/i)).not.toBeInTheDocument();
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it("creates a todo and adds it to the list", async () => {
-    const user = userEvent.setup();
-    mockedTodoClient.listTodos.mockResolvedValue([]);
-    const created: Todo = {
-      id: "2",
-      title: "New task",
-      completed: false,
-      createdAt: "2026-07-17T00:00:00.000Z",
-    };
-    mockedTodoClient.createTodo.mockResolvedValue(created);
+  it("redirects unauthenticated access to / to /login", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      json: () => Promise.resolve({ authenticated: false }),
+    } as Response);
 
-    render(<App />);
-    await screen.findByText(/no todos/i);
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
 
-    await user.type(screen.getByRole("textbox", { name: /title/i }), "New task");
-    await user.click(screen.getByRole("button", { name: /add/i }));
-
-    expect(mockedTodoClient.createTodo).toHaveBeenCalledWith("New task");
-    expect(await screen.findByText("New task")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Login" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Todo" })).not.toBeInTheDocument();
   });
 
-  it("toggles a todo's completed state", async () => {
-    const user = userEvent.setup();
-    mockedTodoClient.listTodos.mockResolvedValue([existingTodo]);
-    mockedTodoClient.toggleTodo.mockResolvedValue({ ...existingTodo, completed: true });
+  it("renders the todo page for authenticated access to /", async () => {
+    vi.mocked(fetch).mockResolvedValue({
+      json: () => Promise.resolve({ authenticated: true }),
+    } as Response);
 
-    render(<App />);
-    await screen.findByText("Buy milk");
+    render(
+      <MemoryRouter initialEntries={["/"]}>
+        <AppRoutes />
+      </MemoryRouter>,
+    );
 
-    await user.click(screen.getByRole("checkbox"));
-
-    expect(mockedTodoClient.toggleTodo).toHaveBeenCalledWith("1", true);
-    await waitFor(() => expect(screen.getByRole("checkbox")).toBeChecked());
-  });
-
-  it("deletes a todo", async () => {
-    const user = userEvent.setup();
-    mockedTodoClient.listTodos.mockResolvedValue([existingTodo]);
-    mockedTodoClient.removeTodo.mockResolvedValue(undefined);
-
-    render(<App />);
-    await screen.findByText("Buy milk");
-
-    await user.click(screen.getByRole("button", { name: /delete/i }));
-
-    expect(mockedTodoClient.removeTodo).toHaveBeenCalledWith("1");
-    await waitFor(() => expect(screen.queryByText("Buy milk")).not.toBeInTheDocument());
+    expect(await screen.findByRole("heading", { name: "Todo" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Login" })).not.toBeInTheDocument();
   });
 });
