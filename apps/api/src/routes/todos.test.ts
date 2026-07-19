@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { Hono } from "hono";
 import { todosRoute } from "./todos.ts";
 import { resetTodos } from "../store.ts";
+import { createSession, resetSessions } from "../sessionStore.ts";
 import type { Todo } from "../types.ts";
 
 function buildApp() {
@@ -11,14 +12,24 @@ function buildApp() {
 }
 
 describe("todos routes", () => {
+  let cookieHeader: string;
+
   beforeEach(() => {
     resetTodos();
+    resetSessions();
+    cookieHeader = `session_id=${createSession()}`;
   });
+
+  function authHeaders(withJson = false): Record<string, string> {
+    return withJson
+      ? { "Content-Type": "application/json", Cookie: cookieHeader }
+      : { Cookie: cookieHeader };
+  }
 
   describe("GET /api/todos", () => {
     it("returns an empty list when no todos exist", async () => {
       const app = buildApp();
-      const res = await app.request("/api/todos");
+      const res = await app.request("/api/todos", { headers: authHeaders() });
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body).toEqual([]);
@@ -28,16 +39,16 @@ describe("todos routes", () => {
       const app = buildApp();
       await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "First" }),
       });
       await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "Second" }),
       });
 
-      const res = await app.request("/api/todos");
+      const res = await app.request("/api/todos", { headers: authHeaders() });
       expect(res.status).toBe(200);
       const body = (await res.json()) as Todo[];
       expect(body).toHaveLength(2);
@@ -50,7 +61,7 @@ describe("todos routes", () => {
       const app = buildApp();
       const res = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "Buy milk" }),
       });
       expect(res.status).toBe(201);
@@ -60,7 +71,7 @@ describe("todos routes", () => {
       expect(typeof body.id).toBe("string");
       expect(typeof body.createdAt).toBe("string");
 
-      const listRes = await app.request("/api/todos");
+      const listRes = await app.request("/api/todos", { headers: authHeaders() });
       const list = (await listRes.json()) as Todo[];
       expect(list).toHaveLength(1);
     });
@@ -69,12 +80,12 @@ describe("todos routes", () => {
       const app = buildApp();
       const res = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "" }),
       });
       expect(res.status).toBe(400);
 
-      const listRes = await app.request("/api/todos");
+      const listRes = await app.request("/api/todos", { headers: authHeaders() });
       const list = await listRes.json();
       expect(list).toEqual([]);
     });
@@ -83,14 +94,14 @@ describe("todos routes", () => {
       const app = buildApp();
       const res = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "  Buy milk  " }),
       });
       expect(res.status).toBe(201);
       const body = (await res.json()) as Todo;
       expect(body.title).toBe("Buy milk");
 
-      const listRes = await app.request("/api/todos");
+      const listRes = await app.request("/api/todos", { headers: authHeaders() });
       const list = (await listRes.json()) as Todo[];
       expect(list[0]?.title).toBe("Buy milk");
     });
@@ -99,7 +110,7 @@ describe("todos routes", () => {
       const app = buildApp();
       const res = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "   " }),
       });
       expect(res.status).toBe(400);
@@ -111,14 +122,14 @@ describe("todos routes", () => {
       const app = buildApp();
       const createRes = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "Buy milk" }),
       });
       const created = (await createRes.json()) as Todo;
 
       const res = await app.request(`/api/todos/${created.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ completed: true }),
       });
       expect(res.status).toBe(200);
@@ -130,20 +141,20 @@ describe("todos routes", () => {
       const app = buildApp();
       const createRes = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "Buy milk" }),
       });
       const created = (await createRes.json()) as Todo;
 
       await app.request(`/api/todos/${created.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ completed: true }),
       });
 
       const res = await app.request(`/api/todos/${created.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ completed: false }),
       });
       expect(res.status).toBe(200);
@@ -155,7 +166,7 @@ describe("todos routes", () => {
       const app = buildApp();
       const res = await app.request("/api/todos/nonexistent-id", {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ completed: true }),
       });
       expect(res.status).toBe(404);
@@ -167,17 +178,18 @@ describe("todos routes", () => {
       const app = buildApp();
       const createRes = await app.request("/api/todos", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(true),
         body: JSON.stringify({ title: "Buy milk" }),
       });
       const created = (await createRes.json()) as Todo;
 
       const res = await app.request(`/api/todos/${created.id}`, {
         method: "DELETE",
+        headers: authHeaders(),
       });
       expect(res.status).toBe(204);
 
-      const listRes = await app.request("/api/todos");
+      const listRes = await app.request("/api/todos", { headers: authHeaders() });
       const list = await listRes.json();
       expect(list).toEqual([]);
     });
@@ -186,8 +198,57 @@ describe("todos routes", () => {
       const app = buildApp();
       const res = await app.request("/api/todos/nonexistent-id", {
         method: "DELETE",
+        headers: authHeaders(),
       });
       expect(res.status).toBe(404);
+    });
+  });
+
+  describe("authentication required", () => {
+    it("rejects GET /api/todos without a session cookie", async () => {
+      const app = buildApp();
+      const res = await app.request("/api/todos");
+      expect(res.status).toBe(401);
+    });
+
+    it("rejects GET /api/todos with an invalid session cookie", async () => {
+      const app = buildApp();
+      const res = await app.request("/api/todos", {
+        headers: { Cookie: "session_id=not-a-real-session" },
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it("rejects POST /api/todos without a session cookie", async () => {
+      const app = buildApp();
+      const res = await app.request("/api/todos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: "Buy milk" }),
+      });
+      expect(res.status).toBe(401);
+
+      const listRes = await app.request("/api/todos", { headers: authHeaders() });
+      const list = await listRes.json();
+      expect(list).toEqual([]);
+    });
+
+    it("rejects PATCH /api/todos/:id without a session cookie", async () => {
+      const app = buildApp();
+      const res = await app.request("/api/todos/nonexistent-id", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ completed: true }),
+      });
+      expect(res.status).toBe(401);
+    });
+
+    it("rejects DELETE /api/todos/:id without a session cookie", async () => {
+      const app = buildApp();
+      const res = await app.request("/api/todos/nonexistent-id", {
+        method: "DELETE",
+      });
+      expect(res.status).toBe(401);
     });
   });
 });

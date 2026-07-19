@@ -90,6 +90,23 @@ git submodule update --init --recursive
 
 `pnpm install` 実行時に `postinstall` スクリプトが `git config core.hooksPath .githooks` を自動設定するため、[`.githooks/`](./.githooks) 配下のフック（`pre-commit` など）が有効になります。`pnpm install` を実行しない場合は手動で同コマンドを実行してください。
 
+## 環境変数（ログイン機能）
+
+`apps/api` はID/パスワードログイン機能のため、以下の環境変数を必須とします。未設定の場合ログインは常に失敗します。
+
+- `AUTH_USER_ID`: ログインID（平文）
+- `AUTH_PASSWORD_HASH`: パスワードのハッシュ値（`<saltHex>:<hashHex>` 形式）
+
+このプロジェクトには `.env` を自動読み込みする仕組みは現状ないため（`apps/api` の `dev`/`test` スクリプトはいずれも `dotenv` 等を経由しません）、`apps/api` を起動する際にプロセスの環境変数として直接設定してください（例: `AUTH_USER_ID=... AUTH_PASSWORD_HASH=... pnpm --filter api dev`）。
+
+`AUTH_PASSWORD_HASH` は `apps/api/src/auth/password.ts` の `hashPassword()` を使って生成します（Node 24 のネイティブTypeScriptサポートによりビルド不要、リポジトリルートから実行可能）。
+
+```bash
+node --input-type=module -e 'import { hashPassword } from "./apps/api/src/auth/password.ts"; console.log(hashPassword("your-password"))'
+```
+
+平文パスワードや生成したハッシュ値を `.env` などのファイルに保存する場合は、誤ってコミットしないよう注意してください。`.env` / `.env.*` は `.gitignore` で除外済みです。
+
 ## openspec/ へのコミットについて
 
 `openspec/` 配下のファイルを編集した場合は、必ず `openspec/` を作業ディレクトリとしてコミット・push してください。

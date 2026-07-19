@@ -128,4 +128,38 @@ describe("todoClient", () => {
       await expect(listTodos()).rejects.toThrow("Request failed with status 500");
     });
   });
+
+  describe("401 detection", () => {
+    it("dispatches an 'auth:unauthorized' window event when a request comes back 401", async () => {
+      const handler = vi.fn();
+      window.addEventListener("auth:unauthorized", handler);
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 401,
+        json: () => Promise.resolve({ error: "unauthorized" }),
+      });
+
+      await expect(listTodos()).rejects.toThrow("unauthorized");
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      window.removeEventListener("auth:unauthorized", handler);
+    });
+
+    it("does not dispatch 'auth:unauthorized' for other error statuses (e.g. 404)", async () => {
+      const handler = vi.fn();
+      window.addEventListener("auth:unauthorized", handler);
+
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        status: 404,
+        json: () => Promise.resolve({ error: "todo not found" }),
+      });
+
+      await expect(toggleTodo("missing", true)).rejects.toThrow("todo not found");
+
+      expect(handler).not.toHaveBeenCalled();
+      window.removeEventListener("auth:unauthorized", handler);
+    });
+  });
 });

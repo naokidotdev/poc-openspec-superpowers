@@ -1,7 +1,9 @@
 import { Hono } from "hono";
+import { requireAuth } from "../middleware/requireAuth.ts";
 import { addTodo, deleteTodo, listTodos, toggleTodo } from "../store.ts";
 
 export const todosRoute = new Hono()
+  .use(requireAuth)
   .get("/", (c) => {
     return c.json(listTodos());
   })
