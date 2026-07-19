@@ -27,7 +27,7 @@
 
 - /opsx:apply でタスクを実行する際は、タスクを直接実装しないこと。必ず Skill ツールで superpowers:subagent-driven-development を明示的に呼び出し、tasks.md を渡すこと。
 - 各タスクは red → green → refactor の順で実装し、テストを書く前にコードを書かないこと。
-- 全タスク完了後、Superpowers の requesting-code-review でレビューしてから /opsx:archive に進むこと。
+- 全タスク完了後、Superpowers の requesting-code-review でレビューし、同じ openspec 側 feature ブランチ内で `/opsx:archive` により変更を確定してから、push・PR作成に進むこと（同一ブランチ内で完結させる）。理由: [docs/operational-notes.md#archiveとgitlink参照更新の順序](./docs/operational-notes.md#archiveとgitlink参照更新の順序)
 - superpowers:subagent-driven-development の implementer は openspec の tasks.md のチェックボックスを自動更新しない。各タスクのレビューが Approved になったら、コントローラー（このセッション）が対応する tasks.md の `- [ ]` を `- [x]` に更新し、openspec/ を作業ディレクトリとしてコミットすること。
 
 ## OpenSpec ↔ Superpowers 統合上の互換性対応
@@ -83,4 +83,4 @@ feature/* ブランチでの修正が完了したら、`feature/*` → `develop`
 - openspec/ の実体ファイルが superproject のステージングに直接追加されようとした場合は、コミット前に必ず人間に確認すること。
 - 新規コミットを作る前に、必ず `git -C openspec branch --show-current` 等で HEAD が detached になっていないか確認すること。空文字が返る場合は detached HEAD なので、先に同期モードなら対応する `feature/<name>`、単独モードなら `develop` へ `git -C openspec checkout <ブランチ>` してから作業すること。事故パターン: [docs/operational-notes.md#detached-head事故パターン](./docs/operational-notes.md#detached-head事故パターン)
 - `git rev-parse HEAD` や `task-brief`/`review-package` スクリプトなど、cwd に依存してリポジトリルートを解決するコマンドの実行前には、`pwd` で superproject のルートにいることを確認すること。仕組みと事故例（submodule 起因のパス事故防止）: [docs/operational-notes.md#cwd安全性の事故例](./docs/operational-notes.md#cwd安全性の事故例)
-- openspec/ 内でのコミット自体はタスク単位（tasks.md のチェックボックス更新、schema修正など）で都度行って良いが、push（openspec/ へのpush、および superproject 側でのgitlink参照更新コミット・push）は毎回まとめて行う必要はない。一区切りついたタイミング（例: subagent-driven-development の全タスク完了時、フェーズの切り替わり時、人間に進捗を報告する直前）にまとめて1回行うこと。まとめて push する直前には、`git -C openspec branch --show-current` と `git -C openspec log --oneline -3` で develop ブランチ（または対象の feature/* ブランチ）かつ意図したコミットが揃っていることを再確認してから push すること。
+- openspec/ 内でのコミット自体はタスク単位（tasks.md のチェックボックス更新、schema修正など）で都度行って良いが、push（openspec/ へのpush、および superproject 側でのgitlink参照更新コミット・push）は毎回まとめて行う必要はない。一区切りついたタイミング（例: subagent-driven-development の全タスク完了・レビュー・`/opsx:archive` まで完了した時、フェーズの切り替わり時、人間に進捗を報告する直前）にまとめて1回行うこと。まとめて push する直前には、`git -C openspec branch --show-current` と `git -C openspec log --oneline -3` で develop ブランチ（または対象の feature/* ブランチ）かつ意図したコミットが揃っていることを再確認してから push すること。

@@ -18,6 +18,14 @@
 
 detached HEAD のままコミットすると意図したブランチに反映されない孤立コミットになり、`git push` が「Everything up-to-date」で無言で失敗する。gitlink 参照更新のために `git checkout <SHA>` した後、detached のまま新規開発を続けてしまうのが典型的な事故パターン。
 
+## archiveとgitlink参照更新の順序
+
+`/opsx:archive` は openspec/ 上で新たなコミット（main specsへのdeltaマージ、変更フォルダの `archive/` への移動）を生む操作である。openspec側PRがマージされた**後**に archive を実行すると、archive自体が openspec/develop にさらにコミットを積むことになり、gitlink参照更新（chore PR）をもう一度やり直す必要が生じる。
+
+これを避けるため、`/opsx:archive` は openspec側のPRを作成する**前**、実装タスクの feature ブランチ内で完了させる。全タスク完了・レビューApproved・archiveまで済んだ状態でPRを作成すれば、gitlink参照更新は openspec側PRのマージ後の1回だけで完結する。
+
+archiveをPRマージ前に行っても、PRがまだレビュー中であればarchiveコミットを含めて自由に修正できるため、「実装がレビューで差し戻された場合にmain specsが未確定の内容を反映してしまう」リスクは生じない。このリスクが顕在化するのはPRマージ**後**に実装内容を覆すケースのみで、これは同期モードが元々許容している「実装PRとopenspec側PRが互いのマージを待たず独立して進行する」設計と同じ性質のリスクであり、archiveの位置を変えても増減しない。
+
 ## cwd安全性の事故例
 
 bash の作業ディレクトリはツール呼び出しをまたいで保持されるため、`cd openspec && ...` で移動した後に戻し忘れると、以降のコマンドが誤って openspec/ 側を対象にしてしまう。
