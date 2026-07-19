@@ -4,8 +4,8 @@ OpenSpec（要件整理・仕様管理）と Superpowers（実装フェーズの
 
 ## リポジトリ構成
 
-- スーパープロジェクト（public, `poc-openspec-superpowers`）: 実装コード（`src/` など）を管理します。
-- `openspec/`（private, [`naokidotdev/poc-openspec-superpowers-specs`](https://github.com/naokidotdev/poc-openspec-superpowers-specs)）: スーパープロジェクトに参照される git submodule です。要件整理・仕様（proposal / design / delta specs）はすべてこちら側で管理されます。
+- superproject（public, `poc-openspec-superpowers`）: 実装コード（`src/` など）を管理します。
+- `openspec/`（private, [`naokidotdev/poc-openspec-superpowers-specs`](https://github.com/naokidotdev/poc-openspec-superpowers-specs)）: superproject に参照される git submodule です。要件整理・仕様（proposal / design / delta specs）はすべてこちら側で管理されます。
 
 役割分担・ブランチ運用・コミットメッセージ規約の詳細なルールは [`CLAUDE.md`](./CLAUDE.md) を参照してください。
 
@@ -20,7 +20,7 @@ sequenceDiagram
     actor 人間
     participant OpenSpec as OpenSpec (/opsx:*)
     participant Superpowers as Superpowers (Skill)
-    participant GitSuper as Git（スーパープロジェクト）
+    participant GitSuper as Git（superproject）
     participant GitSpecs as Git（openspec/）
 
     人間->>OpenSpec: 機能要望・仕様変更を相談
@@ -44,9 +44,17 @@ sequenceDiagram
     Superpowers-->>人間: レビュー結果を提示
 
     Note over OpenSpec,GitSpecs: 一区切りのタイミングでまとめて push
-    OpenSpec->>GitSpecs: feature/{slug} を push → PR作成 → develop へマージ
-    OpenSpec->>GitSuper: gitlink参照更新コミット（openspec/ の参照先を更新）
-    OpenSpec->>GitSuper: feature/{slug} を push → PR作成 → develop へマージ
+    par 実装PRとopenspec側PRは互いのマージを待たずに独立して進行
+        OpenSpec->>GitSuper: feature/{slug} を push → 実装PR作成 → develop へマージ
+    and
+        OpenSpec->>GitSpecs: feature/{slug} を push → PR作成 → develop へマージ
+    end
+
+    Note over OpenSpec,GitSuper: openspec側PRのマージ確定後、実装PRとは別のchore PRで対応（実装PRが既にマージ済みでも追加commitできないため）
+    OpenSpec->>GitSuper: develop から feature/update-openspec-gitlink-{slug} を作成
+    OpenSpec->>GitSuper: gitlink参照更新コミット（openspec/ の参照先を更新）→ push → chore PR作成
+    Note over OpenSpec,GitSuper: 機械的な参照更新のみのため、人間のレビューを待たずAgentが即座にマージしてよい
+    OpenSpec->>GitSuper: develop へマージ
     人間->>OpenSpec: /opsx:archive で変更を確定
 
     Note over 人間,GitSuper: develop → main のリリースマージは人間が判断して実施
@@ -58,7 +66,7 @@ sequenceDiagram
 sequenceDiagram
     actor 人間
     participant Agent as Claude Code
-    participant GitSuper as Git（スーパープロジェクト）
+    participant GitSuper as Git（superproject）
 
     人間->>Agent: 作業を依頼（openspec/ 配下は変更しない）
     Agent->>GitSuper: develop から feature/{slug} を作成・checkout（openspec/ には変更を加えない）
@@ -92,11 +100,13 @@ git add .
 git commit -m "docs: ..."   # Conventional Commits 形式
 git push
 cd ..
-git add openspec   # gitlink参照(コミットハッシュ)の更新のみをスーパープロジェクト側にコミット
-git commit -m "chore: update openspec submodule reference"
+git add openspec   # gitlink参照(コミットハッシュ)の更新のみを superproject 側にコミット
+git commit -m "chore: update openspec submodule reference to merged <change-id> change"
 ```
 
-`openspec/` 配下の実体ファイルがスーパープロジェクト側に直接コミットされそうになった場合は [`.githooks/pre-commit`](./.githooks/pre-commit) が検知して拒否します。
+上記はシェルを操作する人間向けの例です。Claude Code がこの操作を行う場合は `cd openspec && ...` ではなく `git -C openspec <subcommand>` の形を使うこと、また gitlink 参照更新コミットは実装PRとは別PRにすることなど、詳細なルールは [`CLAUDE.md`](./CLAUDE.md#gitlink-参照更新コミットの-pr) を参照してください。
+
+`openspec/` 配下の実体ファイルが superproject 側に直接コミットされそうになった場合は [`.githooks/pre-commit`](./.githooks/pre-commit) が検知して拒否します。
 
 ## GitHub Actions から openspec/ (private submodule) にアクセスする場合の手順（将来対応用）
 
@@ -107,7 +117,7 @@ git commit -m "chore: update openspec submodule reference"
 1. GitHub の Settings → Developer settings → Fine-grained tokens で新規トークンを発行する。
     - Repository access: `naokidotdev/poc-openspec-superpowers-specs` のみに限定する。
     - Permissions: `Contents: Read-only`（読み取りのみで十分な場合）。
-2. 発行したトークンを、スーパープロジェクト（`poc-openspec-superpowers`）の Settings → Secrets and variables → Actions に `OPENSPEC_SPECS_PAT` という名前で登録する。
+2. 発行したトークンを、superproject（`poc-openspec-superpowers`）の Settings → Secrets and variables → Actions に `OPENSPEC_SPECS_PAT` という名前で登録する。
 3. ワークフロー側で submodule checkout 時にトークンを利用する:
 
     ```yaml
@@ -123,7 +133,7 @@ git commit -m "chore: update openspec submodule reference"
 
 1. `ssh-keygen -t ed25519 -f deploy_key -N ""` でキーペアを生成する。
 2. 公開鍵（`deploy_key.pub`）を openspec/（`naokidotdev/poc-openspec-superpowers-specs`）の Settings → Deploy keys に登録する（Read-only）。
-3. 秘密鍵（`deploy_key`）をスーパープロジェクトの Actions Secrets に `OPENSPEC_SPECS_DEPLOY_KEY` として登録する。
+3. 秘密鍵（`deploy_key`）を superproject の Actions Secrets に `OPENSPEC_SPECS_DEPLOY_KEY` として登録する。
 4. ワークフロー側で `webfactory/ssh-agent` などを使い、submodule checkout 前に秘密鍵をロードする。
 
-いずれの方法でも、トークン・秘密鍵は openspec/ への読み取り権限に限定し、スーパープロジェクト側の Secrets に平文でコミットしないこと。
+いずれの方法でも、トークン・秘密鍵は openspec/ への読み取り権限に限定し、superproject 側の Secrets に平文でコミットしないこと。

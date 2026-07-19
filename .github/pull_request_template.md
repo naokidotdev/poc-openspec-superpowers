@@ -15,10 +15,15 @@
 ## Checklist
 
 - [ ] コミットメッセージが [Conventional Commits](https://www.conventionalcommits.org/) 形式に従っている
+- [ ] コミットメッセージ・PRのタイトル/本文が日本語で書かれている（typeやGitHub連携キーワード等は除く）
 - [ ] マージ先ブランチが `develop`（`develop` → `main` のリリースPRを除く）
-- [ ] （実装フェーズの変更の場合）superpowers:requesting-code-review でレビュー済み
-- [ ] （openspec/ 配下を変更した場合）openspec/ 側の変更もマージ・push済みで、gitlink参照が最新
+- [ ] superpowers:requesting-code-review でレビュー済み <!-- 単独モードの場合、削除してOK -->
+- [ ] openspec側・superproject側のPRを両方作成した後、先に作成した方のPR本文のプレースホルダーを実リンクに更新した <!-- 単独モードの場合、削除してOK -->
 
 ---
 
-<!-- Claude Code で作業した場合、🤖 Generated with [Claude Code](https://claude.com/claude-code) と session の URL (https://claude.ai/code/session_xxx) を記載 -->
+<!-- AI で作業した場合、AI の明示とセッション URL をリンク
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+https://claude.ai/code/session_xxx
+-->
